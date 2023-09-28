@@ -1,4 +1,4 @@
-import {CloudProvider} from './helpers/wokerFtTask';
+import {CloudProvider} from './helpers/workerFtTask';
 import CloudManager from './services/cloudManager.services';
 
 interface taskData {

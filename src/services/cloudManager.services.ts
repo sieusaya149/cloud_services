@@ -1,5 +1,5 @@
 import Queue from '~/helpers/queue';
-import {UploadTask, WorkerInfo, CloudProvider} from '~/helpers/wokerFtTask';
+import {UploadTask, WorkerInfo, CloudProvider} from '~/helpers/workerFtTask';
 import {TaskEventEmmitter, TaskEvent} from './taskEvent.services';
 
 interface CloudManagerI {

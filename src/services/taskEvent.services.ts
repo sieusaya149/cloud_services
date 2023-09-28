@@ -1,6 +1,6 @@
 import EventEmitter from 'events';
 import CloudManager from './cloudManager.services';
-import {UploadTask} from '../helpers/wokerFtTask';
+import {UploadTask} from '../helpers/workerFtTask';
 import cluster from 'cluster';
 
 export enum TaskEvent {
