@@ -1,0 +1,39 @@
+{
+    "name": "cloud_service",
+    "version": "1.0.0",
+    "description": "",
+    "main": "jest.config.js",
+    "scripts": {
+        "dev": "npx nodemon",
+        "buildStart": "npm run build && npm run start",
+        "build": "rimraf ./dist && tsc && tsc-alias",
+        "start": "node -r dotenv/config dist/server.js",
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
+        "prettier": "prettier --check .",
+        "prettier:fix": "prettier --write .",
+        "test": "jest --detectOpenHandles --verbose"
+    },
+    "author": "Hung Viet Hoang",
+    "license": "ISC",
+    "devDependencies": {
+        "@types/node": "^20.7.0",
+        "@typescript-eslint/eslint-plugin": "^6.7.3",
+        "@typescript-eslint/parser": "^6.7.3",
+        "tsconfig-paths": "^4.2.0",
+        "typescript": "^5.2.2"
+    },
+    "dependencies": {
+        "@types/amqplib": "^0.10.2",
+        "@types/aws-sdk": "^2.7.0",
+        "@types/dotenv": "^8.2.0",
+        "amqplib": "^0.10.3",
+        "aws-sdk": "^2.1464.0",
+        "crypto": "^1.0.1",
+        "dotenv": "^16.3.1",
+        "eslint": "^8.50.0",
+        "eslint-config-prettier": "^9.0.0",
+        "eslint-plugin-prettier": "^5.0.0",
+        "prettier": "^3.0.3"
+    }
+}
