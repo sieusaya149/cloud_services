@@ -38,4 +38,38 @@ export default class RabbitMqServices {
             }
         });
     };
+
+    static publishMessage = async (
+        message: string,
+        exchangeName: string,
+        routingKey: string,
+        typeExchange = 'direct'
+    ) => {
+        // Create a RabbitMQ connection within the scope of this function.
+        if (!rabbitMqUri) {
+            throw new Error('Please give info connection rabbitmq');
+        }
+        const connection = await amqp.connect(rabbitMqUri);
+
+        try {
+            // Create a channel for this connection.
+            const channel = await connection.createChannel();
+            // Declare the exchange (you can also declare queues here).
+            // Make sure the exchange and queue definitions match your RabbitMQ setup.
+            await channel.assertExchange(exchangeName, typeExchange, {
+                durable: true
+            });
+
+            // Publish the message to the exchange.
+            channel.publish(exchangeName, routingKey, Buffer.from(message));
+
+            // Close the channel.
+            await channel.close();
+        } catch (error) {
+            console.error('Error publishing message:', error);
+        } finally {
+            // Close the connection when you're done.
+            await connection.close();
+        }
+    };
 }

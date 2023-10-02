@@ -3,7 +3,7 @@ import os from 'os';
 import RabbitMqServices, {shareMessage} from './services/rabbitmq.services';
 import MockService from './services/mock.services';
 import CloudManager from './services/cloudManager.services';
-import {MasterMessage} from './services/taskEvent.services';
+import {MasterMessage, TaskEvent} from './services/taskEvent.services';
 import {WorkerStatus, WorkerMessage} from './config';
 import {autoSendTask} from './simulationPushTask';
 const numCPUs = os.cpus().length;
@@ -31,10 +31,14 @@ if (cluster.isPrimary) {
         const jsonMessage: WorkerMessage = JSON.parse(message);
         switch (jsonMessage.status) {
             case WorkerStatus.SUCCESS:
-                cloudInstance.updateSuccessTask(jsonMessage.uploadTask);
+                cloudInstance
+                    .getEventEmmiter()
+                    .emit(TaskEvent.SuccessTask, jsonMessage.uploadTask);
                 break;
             case WorkerStatus.FAILURE:
-                cloudInstance.updateFailureTask(jsonMessage.uploadTask);
+                cloudInstance
+                    .getEventEmmiter()
+                    .emit(TaskEvent.FailureTask, jsonMessage.uploadTask);
                 break;
 
             default:

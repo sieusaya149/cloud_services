@@ -1,9 +1,6 @@
-import {CloudProvider} from './helpers/workerFtTask';
+import {CloudProvider, TaskData} from './helpers/workerFtTask';
 import CloudManager from './services/cloudManager.services';
 
-interface taskData {
-    content: string;
-}
 let numtaskIndex = 0; // this help monitor the nums of task was sent
 let intervalId: string | number | NodeJS.Timeout | undefined;
 function randomProvider() {
@@ -18,7 +15,7 @@ function randomProvider() {
     }
 }
 
-const INTERVAL_TIME = 1000;
+const INTERVAL_TIME = 5000;
 const MAX_TASK = 20;
 export const autoSendTask = () => {
     intervalId = setInterval(() => {
@@ -30,8 +27,10 @@ export const autoSendTask = () => {
             console.log('============== STOP SEND TASK =================');
         }
         const cloudProvider = randomProvider();
-        const fakeData: taskData = {
-            content: `Fake Task Infor for ${cloudProvider}`
+        const fakeData: TaskData = {
+            size: 100,
+            location: 'test',
+            name: 'testname'
         };
         CloudManager.getInstance().addNewTask(cloudProvider, fakeData);
     }, INTERVAL_TIME);

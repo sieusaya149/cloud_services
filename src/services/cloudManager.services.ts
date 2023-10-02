@@ -1,9 +1,14 @@
 import Queue from '~/helpers/queue';
-import {UploadTask, WorkerInfo, CloudProvider} from '~/helpers/workerFtTask';
+import {
+    UploadTask,
+    WorkerInfo,
+    CloudProvider,
+    TaskData
+} from '~/helpers/workerFtTask';
 import {TaskEventEmmitter, TaskEvent} from './taskEvent.services';
 
 interface CloudManagerI {
-    addNewTask(cloudProvider: CloudProvider, taskData: any): any;
+    addNewTask(cloudProvider: CloudProvider, taskData: TaskData): any;
     updateSuccessTask(uploadTask: UploadTask): any;
     updateFailureTask(uploadTask: UploadTask): any;
     getAvaiTask(cloudProvider: CloudProvider): UploadTask | undefined;
@@ -55,7 +60,7 @@ export default class CloudManager implements CloudManagerI {
         return this.eventEmmiter;
     }
 
-    public addNewTask(cloudProvider: CloudProvider, taskData: any): any {
+    public addNewTask(cloudProvider: CloudProvider, taskData: TaskData): any {
         console.log('CLOUD MANAGER:: new task arrived, push the queue');
         let cloudQueue = this.uploadTasksMap.get(cloudProvider);
         if (!cloudQueue) {
@@ -101,7 +106,6 @@ export default class CloudManager implements CloudManagerI {
         // update worker infor
         const worker = this.getWorker(cloudProvider);
         worker.successUpdate();
-        // send message to rabbit mq
 
         // check avai task for this provider
         const avaiTask = this.getAvaiTask(cloudProvider);
@@ -132,7 +136,6 @@ export default class CloudManager implements CloudManagerI {
         // update worker infor
         const worker = this.getWorker(cloudProvider);
         worker.failureUpdate();
-        // send message to rabbit mq
 
         // check avai task for this provider
         const avaiTask = this.getAvaiTask(cloudProvider);

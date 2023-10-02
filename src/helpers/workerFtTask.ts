@@ -2,6 +2,12 @@ const MAX_TASK_FOR_EACH_PROVIDER = 1;
 const MAX_RETRY = 1;
 import {randomUUID} from 'crypto';
 
+export interface TaskData {
+    size: number;
+    location: string;
+    name: string;
+}
+
 export enum CloudProvider {
     AWS = 'AWS',
     GOOGLE = 'GOOGLE',
@@ -11,7 +17,7 @@ export enum CloudProvider {
 export interface UploadTaskI {
     id: string;
     cloudProvider: CloudProvider;
-    metadata: any;
+    metadata: TaskData;
     createdDate: Date;
     retryTime: number;
 }
@@ -22,7 +28,7 @@ export class UploadTask implements UploadTaskI {
     metadata: any;
     createdDate: Date;
     retryTime: number;
-    constructor(cloudProvider: CloudProvider, metaData: any) {
+    constructor(cloudProvider: CloudProvider, metaData: TaskData) {
         this.id = randomUUID();
         this.cloudProvider = cloudProvider;
         this.metadata = metaData;
