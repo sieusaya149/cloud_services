@@ -1,4 +1,4 @@
-import {CloudProvider, UploadTask, TaskData} from './workerFtTask';
+import {UploadTask} from './workerFtTask';
 import RabbitMqServices from '../services/rabbitmq.services';
 import {exchangeNotify, queueNotify} from '~/config';
 export enum NotifyType {

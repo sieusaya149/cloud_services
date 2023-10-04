@@ -22,7 +22,8 @@ export class TaskEventEmmitter extends EventEmitter {
     setupNewTaskEvent() {
         this.on(TaskEvent.NewTask, async (newTask: UploadTask) => {
             const cloudManagerInstance = CloudManager.getInstance();
-            const cloudProvider = newTask.cloudProvider;
+            const cloudConfig = newTask.cloudConfig;
+            const cloudProvider = cloudConfig.type;
             if (cloudManagerInstance.isAvaiWorker(cloudProvider)) {
                 cloudManagerInstance.startProcessingTask(cloudProvider);
                 // TODO send message queue to notify the new task was executed
@@ -41,8 +42,6 @@ export class TaskEventEmmitter extends EventEmitter {
         this.on(TaskEvent.SuccessTask, async (successTask: UploadTask) => {
             console.log(`SUCCESS TASK ${successTask.id}`);
             const cloudManagerInstance = CloudManager.getInstance();
-            // TODO send message queue to notify the new task was executed
-            await Notify.pushNotify(NotifyType.successTask, successTask);
             cloudManagerInstance.updateSuccessTask(successTask);
         });
     }
@@ -51,8 +50,6 @@ export class TaskEventEmmitter extends EventEmitter {
         this.on(TaskEvent.FailureTask, async (failureTask: UploadTask) => {
             console.log(`FAILED TASK ${failureTask.id}`);
             const cloudManagerInstance = CloudManager.getInstance();
-            // TODO send message queue to notify the new task was executed
-            await Notify.pushNotify(NotifyType.failureTask, failureTask);
             cloudManagerInstance.updateFailureTask(failureTask);
         });
     }

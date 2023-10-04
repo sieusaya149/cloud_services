@@ -7,13 +7,13 @@ export const queueCloud = process.env.QUEUE_CLOUD || 'cloud_queue';
 export const exchangeNotify = process.env.EXCHANGE_NOTIFY || 'notify_exchange';
 export const queueNotify = process.env.QUEUE_NOTIFY || 'notify_queue';
 
-import {UploadTask} from './helpers/workerFtTask';
-export enum WorkerStatus {
-    SUCCESS = 'SUCCESS',
-    FAILURE = 'FAILURE'
-}
+// exchange and queue for handling update progress
+export const exchangeProgress =
+    process.env.EXCHANGE_PROGRESS || 'progress_exchange';
+export const queueProgress = process.env.QUEUE_PROGRESS || 'progress_queue';
 
-export interface WorkerMessage {
-    status: WorkerStatus;
-    uploadTask: UploadTask;
-}
+import {UploadTask} from './helpers/workerFtTask';
+
+export const ACCESS_KEY_ID = process.env.ACCESS_KEY_ID || '';
+export const SECRET_KEY = process.env.SECRET_KEY || '';
+export const BUCKET_NAME = process.env.BUCKET_NAME || '';

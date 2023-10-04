@@ -1,36 +1,26 @@
 const MAX_TASK_FOR_EACH_PROVIDER = 1;
 const MAX_RETRY = 1;
 import {randomUUID} from 'crypto';
+import {CloudConfig, PublishFileData} from 'packunpackservice';
 
-export interface TaskData {
-    size: number;
-    location: string;
-    name: string;
-}
-
-export enum CloudProvider {
-    AWS = 'AWS',
-    GOOGLE = 'GOOGLE',
-    AZURE = 'AZURE'
-}
 // format message in queue is
 export interface UploadTaskI {
     id: string;
-    cloudProvider: CloudProvider;
-    metadata: TaskData;
+    cloudConfig: CloudConfig;
+    metadata: PublishFileData;
     createdDate: Date;
     retryTime: number;
 }
 
 export class UploadTask implements UploadTaskI {
     id: string;
-    cloudProvider: CloudProvider;
-    metadata: any;
+    cloudConfig: CloudConfig;
+    metadata: PublishFileData;
     createdDate: Date;
     retryTime: number;
-    constructor(cloudProvider: CloudProvider, metaData: TaskData) {
+    constructor(cloudConfig: CloudConfig, metaData: PublishFileData) {
         this.id = randomUUID();
-        this.cloudProvider = cloudProvider;
+        this.cloudConfig = cloudConfig;
         this.metadata = metaData;
         this.createdDate = new Date();
         this.retryTime = 0;

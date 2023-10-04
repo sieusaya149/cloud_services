@@ -1,6 +1,14 @@
 import amqp from 'amqplib';
 import cluster from 'cluster';
 import {queueCloud, exchangeCloud, rabbitMqUri} from '~/config';
+import {UploadTask} from '~/helpers/workerFtTask';
+import CloudManager from './cloudManager.services';
+import {
+    UnpackingFactory,
+    UnpackingMessage,
+    CloudUploadMsg
+} from 'packunpackservice';
+import {UploadTaskParser} from '~/helpers/taskParser';
 export interface shareMessage {
     fileType: string;
     cloudProvider: string;
@@ -18,21 +26,25 @@ export default class RabbitMqServices {
 
         channel.consume(queue.queue, (message) => {
             if (message !== null) {
+                // FIXME currently I have a redundant task that related to parse the data to json
                 const data = JSON.parse(message.content.toString());
-                console.log(data);
-                // // Determine file type and cloud provider.
-                // const fileType = data.fileType;
-                // const cloudProvider = data.cloudProvider;
-
-                // Spawn a child process for the specific file type and cloud provider.
-                const worker = cluster.fork();
-                const msg: shareMessage = {
-                    fileType: 'test',
-                    cloudProvider: 'google',
-                    data: data
-                };
-                worker.send(msg);
-
+                const unpackingFactory = new UnpackingFactory(data.typeMsg);
+                const unpackingInstance =
+                    unpackingFactory.createUnpackingInstance();
+                if (!unpackingInstance) {
+                    throw new Error('Can not create unpacking instance');
+                }
+                const unpackedData = unpackingInstance.unpack(
+                    message.content.toString()
+                );
+                const uploadTaskParser = new UploadTaskParser();
+                const listUploadTask =
+                    uploadTaskParser.getTaskFromUnpackedData(unpackedData);
+                for (let index = 0; index < listUploadTask.length; index++) {
+                    CloudManager.getInstance().addNewTask(
+                        listUploadTask[index]
+                    );
+                }
                 // Acknowledge the message when processing is complete.
                 channel.ack(message);
             }

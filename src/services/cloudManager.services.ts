@@ -1,14 +1,10 @@
 import Queue from '~/helpers/queue';
-import {
-    UploadTask,
-    WorkerInfo,
-    CloudProvider,
-    TaskData
-} from '~/helpers/workerFtTask';
+import {UploadTask, WorkerInfo} from '~/helpers/workerFtTask';
 import {TaskEventEmmitter, TaskEvent} from './taskEvent.services';
+import {CloudProvider} from 'packunpackservice';
 
 interface CloudManagerI {
-    addNewTask(cloudProvider: CloudProvider, taskData: TaskData): any;
+    addNewTask(uploadTask: UploadTask): any;
     updateSuccessTask(uploadTask: UploadTask): any;
     updateFailureTask(uploadTask: UploadTask): any;
     getAvaiTask(cloudProvider: CloudProvider): UploadTask | undefined;
@@ -60,17 +56,18 @@ export default class CloudManager implements CloudManagerI {
         return this.eventEmmiter;
     }
 
-    public addNewTask(cloudProvider: CloudProvider, taskData: TaskData): any {
+    public addNewTask(uploadTask: UploadTask): any {
         console.log('CLOUD MANAGER:: new task arrived, push the queue');
+        const cloudConfig = uploadTask.cloudConfig;
+        const cloudProvider = cloudConfig.type;
         let cloudQueue = this.uploadTasksMap.get(cloudProvider);
         if (!cloudQueue) {
             cloudQueue = new Queue<UploadTask>();
         }
-        const newTask = new UploadTask(cloudProvider, taskData);
-        cloudQueue.push_back(newTask);
-        console.log(newTask);
-        if (this.isAvaiWorker(cloudProvider)) {
-            const avaiTask = this.getAvaiTask(cloudProvider);
+        cloudQueue.push_back(uploadTask);
+        console.log(uploadTask);
+        if (this.isAvaiWorker(cloudConfig.type)) {
+            const avaiTask = this.getAvaiTask(cloudConfig.type);
             // if has task, emit event 'NewTask'
             if (avaiTask) {
                 console.log(
@@ -92,8 +89,9 @@ export default class CloudManager implements CloudManagerI {
     }
 
     public updateSuccessTask(uploadTask: UploadTask): any {
-        const cloudProvider = uploadTask.cloudProvider;
-        const frontTask = this.getFrontTask(cloudProvider);
+        const cloudConfig = uploadTask.cloudConfig;
+        const cloudProvider = cloudConfig.type;
+        const frontTask = this.getFrontTask(cloudConfig.type);
         if (!frontTask) {
             throw new Error('No Front Task in the queue');
         }
@@ -120,7 +118,8 @@ export default class CloudManager implements CloudManagerI {
         }
     }
     public updateFailureTask(uploadTask: UploadTask): any {
-        const cloudProvider = uploadTask.cloudProvider;
+        const cloudConfig = uploadTask.cloudConfig;
+        const cloudProvider = cloudConfig.type;
         const frontTask = this.getFrontTask(cloudProvider);
         if (!frontTask) {
             throw new Error('No Front Task in the queue');
