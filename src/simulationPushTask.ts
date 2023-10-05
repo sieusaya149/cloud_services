@@ -1,6 +1,7 @@
-import {CloudProvider, TaskData} from './helpers/workerFtTask';
+import {CloudConfig, CloudProvider, PublishFileData} from 'packunpackservice';
+import {UploadTask} from './helpers/workerFtTask';
 import CloudManager from './services/cloudManager.services';
-
+import {Types} from 'mongoose';
 let numtaskIndex = 0; // this help monitor the nums of task was sent
 let intervalId: string | number | NodeJS.Timeout | undefined;
 function randomProvider() {
@@ -15,7 +16,7 @@ function randomProvider() {
     }
 }
 
-const INTERVAL_TIME = 5000;
+const INTERVAL_TIME = 2000;
 const MAX_TASK = 20;
 export const autoSendTask = () => {
     intervalId = setInterval(() => {
@@ -26,12 +27,30 @@ export const autoSendTask = () => {
             clearInterval(intervalId);
             console.log('============== STOP SEND TASK =================');
         }
-        const cloudProvider = randomProvider();
-        const fakeData: TaskData = {
-            size: 100,
-            location: 'test',
-            name: 'testname'
+        // const cloudProvider = randomProvider();
+        const cloudProvider = CloudProvider.AWS;
+
+        const fakeCloudConfig: CloudConfig = {
+            type: cloudProvider,
+            owner: new Types.ObjectId(),
+            metaData: {
+                accessKey: 'fakeKey1',
+                secretKey: 'fakeKey2',
+                bucketName: 'fakeBucketName'
+            }
         };
-        CloudManager.getInstance().addNewTask(cloudProvider, fakeData);
+
+        const fakeFileData: PublishFileData = {
+            fileId: new Types.ObjectId(),
+            owner: new Types.ObjectId(),
+            fileName: 'fakeFileName',
+            filePath: 'fakeFilePath',
+            size: 1000
+        };
+        const uploadTaskFake: UploadTask = new UploadTask(
+            fakeCloudConfig,
+            fakeFileData
+        );
+        CloudManager.getInstance().addNewTask(uploadTaskFake);
     }, INTERVAL_TIME);
 };

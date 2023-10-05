@@ -2,16 +2,21 @@ import cluster from 'cluster';
 import os from 'os';
 import RabbitMqServices from './services/rabbitmq.services';
 import CloudManager from './services/cloudManager.services';
-import {MasterMessage, TaskEvent} from './services/taskEvent.services';
+import {MasterMessage} from './services/taskEvent.services';
 import {autoSendTask} from './simulationPushTask';
-import {IpcMessageFactory} from './helpers/ipcMessage';
-import {UploadFactory} from './helpers/uploadFactory';
+import {IpcMessageFactory} from './services/ipcServices/ipcMessage';
+import {UploadFactory} from './services/uploadServices/uploadFactory';
+import express, {Express} from 'express';
+import {createServer} from 'http';
+import {WebSocketServer} from './socket-handler/webSockerServer';
 const numCPUs = os.cpus().length;
 if (cluster.isPrimary) {
     console.log(`nums cpu is ${numCPUs}`);
-    RabbitMqServices.startMasterConsumer();
+    RabbitMqServices.consumerMessage();
+    // autoSendTask();
     const cloudInstance = CloudManager.getInstance();
     const event = cloudInstance.getEventEmmiter();
+    // setup event for master node
     event.setupNewTaskEvent();
     event.setupSucessTaskEvent();
     event.setupFailureTaskEvent();
@@ -36,6 +41,11 @@ if (cluster.isPrimary) {
             parsedMessage.handlingMessage();
         }
     });
+    // setup socket server
+    const app: Express = express();
+    const httpServer = createServer(app);
+    WebSocketServer.getInstance(httpServer);
+    httpServer.listen(3005);
 } else {
     // Worker process
     process.on('message', async (masterMsg: MasterMessage) => {

@@ -1,16 +1,13 @@
 import AWS from 'aws-sdk';
 import fs from 'fs';
-import crypto from 'crypto';
 import stream from 'stream';
-import {MasterMessage} from './taskEvent.services';
-import {ACCESS_KEY_ID, BUCKET_NAME, SECRET_KEY} from '../config';
 import {
     FailureMessage,
     ProgressMessage,
     SuccessMessage
-} from '../helpers/ipcMessage';
+} from '../ipcServices/ipcMessage';
 import {UploadTask} from '~/helpers/workerFtTask';
-import {UploadStrategyBase} from '~/helpers/uploadStrategy';
+import {UploadStrategyBase} from '~/services/uploadServices/uploadStrategy';
 
 function send(message: string) {
     if (process.send) {
@@ -96,42 +93,33 @@ export default class AwsService extends UploadStrategyBase {
         });
     }
 
-    uploadFileMock(uploadTask: UploadTask) {
+    async executeUploadMock() {
         console.log('upload task recevied from worker');
-        console.log(uploadTask);
-        // const err = false;
-        // let archo = 0;
-        // for (let i = 0; i < 1000; i++) {
-        //     const percentCompleted = (i / 1000) * 100;
-        //     if (
-        //         archo != Math.round(percentCompleted) &&
-        //         Math.round(percentCompleted) % 10 == 0
-        //     ) {
-        //         archo = Math.round(percentCompleted);
-        //         const progressMessage = new ProgressMessage(archo, uploadTask);
-        //         send(progressMessage.toString());
-        //     }
-        // }
-        // if (!err) {
-        //     // const workerMessage: WorkerMessage = {
-        //     //     status: WorkerStatus.FAILURE,
-        //     //     uploadTask: uploadTask
-        //     // };
-        //     // const message: string = JSON.stringify(workerMessage) || '';
-        //     const successMessage = new SuccessMessage(uploadTask);
-        //     send(successMessage.toString());
-        //     process.exit(1);
-        // } else {
-        //     // console.error(err);
-        //     // const workerMessage: WorkerMessage = {
-        //     //     status: WorkerStatus.SUCCESS,
-        //     //     uploadTask: uploadTask
-        //     // };
-        //     // const message: string = JSON.stringify(workerMessage) || '';
-        //     // send(message);
-        //     const failureMessage = new FailureMessage(uploadTask);
-        //     send(failureMessage.toString());
-        //     process.exit(0);
-        // }
+        console.log(this.uploadTask);
+        const err = false;
+        let archo = 0;
+        for (let i = 0; i < 1000; i++) {
+            const percentCompleted = (i / 1000) * 100;
+            if (
+                archo != Math.round(percentCompleted) &&
+                Math.round(percentCompleted) % 10 == 0
+            ) {
+                archo = Math.round(percentCompleted);
+                const progressMessage = new ProgressMessage(
+                    archo,
+                    this.uploadTask
+                );
+                send(progressMessage.toString());
+            }
+        }
+        if (!err) {
+            const successMessage = new SuccessMessage(this.uploadTask);
+            send(successMessage.toString());
+            process.exit(1);
+        } else {
+            const failureMessage = new FailureMessage(this.uploadTask);
+            send(failureMessage.toString());
+            process.exit(0);
+        }
     }
 }

@@ -1,6 +1,6 @@
 import {CloudProvider} from 'packunpackservice';
-import {UploadTask} from './workerFtTask';
-import AwsService from '../services/aws.services';
+import {UploadTask} from '../../helpers/workerFtTask';
+import AwsService from './aws.services';
 import {UploadStrategyBase} from './uploadStrategy';
 
 export class UploadFactory {

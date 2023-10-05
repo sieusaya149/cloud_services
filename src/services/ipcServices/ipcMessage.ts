@@ -1,11 +1,12 @@
 // this file help packing and unpacking the data send between the child and the parent proccess
 
 import {randomUUID} from 'crypto';
-import {Notify, NotifyType} from './notify';
-import CloudManager from '../services/cloudManager.services';
-import {UploadTask} from '~/helpers/workerFtTask';
-import {TaskEvent} from '../services/taskEvent.services';
-import {Progress} from '~/helpers/progress';
+import {Notify, NotifyType} from '../../helpers/notify';
+import CloudManager from '../cloudManager.services';
+import {UploadTask} from '../../helpers/workerFtTask';
+import {TaskEvent} from '../taskEvent.services';
+import {Progress} from '../../helpers/progress';
+import {WebSocketServer} from '../../socket-handler/webSockerServer';
 
 enum TypeIpcMessage {
     SUCCESS = 'SUCCESS',
@@ -97,8 +98,13 @@ export class ProgressMessage extends IpcMessageBase {
     getType(): string | null {
         return TypeIpcMessage.PROGRESS;
     }
+    // Due to the rate limit of rabbit mq, need to switch to web socket
     async handlingMessage() {
-        await Progress.pushProgress(this);
+        // await Progress.pushProgress(this);
+        WebSocketServer.getInstance().updateProgressForUser(
+            this.uploadTask,
+            this.progress
+        );
     }
 }
 

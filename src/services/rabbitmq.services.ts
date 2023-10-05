@@ -1,7 +1,7 @@
 import amqp from 'amqplib';
 import cluster from 'cluster';
-import {queueCloud, exchangeCloud, rabbitMqUri} from '~/config';
-import {UploadTask} from '~/helpers/workerFtTask';
+import {queueCloud, exchangeCloud, rabbitMqUri} from '../config';
+import {UploadTask} from '../helpers/workerFtTask';
 import CloudManager from './cloudManager.services';
 import {
     UnpackingFactory,
@@ -15,7 +15,7 @@ export interface shareMessage {
     data: any;
 }
 export default class RabbitMqServices {
-    static startMasterConsumer = async () => {
+    static consumerMessage = async () => {
         if (!rabbitMqUri) {
             throw new Error('Invalid rabbitmq url');
         }

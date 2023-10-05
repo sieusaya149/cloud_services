@@ -1,6 +1,6 @@
-import {ProgressMessage} from '~/helpers/ipcMessage';
+import {ProgressMessage} from '../services/ipcServices/ipcMessage';
 import {UploadTask} from './workerFtTask';
-import RabbitMqServices from '~/services/rabbitmq.services';
+import RabbitMqServices from '../services/rabbitmq.services';
 import {exchangeProgress, queueProgress} from '~/config';
 
 interface ProgressI {
