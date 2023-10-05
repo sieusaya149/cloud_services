@@ -8,13 +8,7 @@ import {
 } from '../ipcServices/ipcMessage';
 import {UploadTask} from '~/helpers/workerFtTask';
 import {UploadStrategyBase} from '~/services/uploadServices/uploadStrategy';
-import {ChildErrorCode, ChildError} from '~/errorHandling/childError';
-
-function send(message: string) {
-    if (process.send) {
-        process.send(message);
-    }
-}
+import {ChildError, ChildErrorCode} from '~/errorHandling/childError';
 
 export default class AwsService extends UploadStrategyBase {
     private s3;
@@ -29,86 +23,41 @@ export default class AwsService extends UploadStrategyBase {
         });
         this.bucketName = bucketName;
     }
-    async executeUpload() {
-        try {
-            const fileParams = {
-                Bucket: this.bucketName,
-                Key: this.uploadTask.metadata.fileName
-            };
-            try {
-                await this.s3.headObject(fileParams).promise();
-                const falureMessage = new FailureMessage(
-                    this.uploadTask,
-                    `file ${this.uploadTask.metadata.fileName} is existed`
-                );
-                send(falureMessage.toString());
-                process.exit(0);
-            } catch (error: any) {
-                if (error.name === 'NotFound') {
-                    //continue
-                    console.log('File Not Found Contiue Upload');
-                } else {
-                    // Handle other errors here....
-                    const falureMessage = new FailureMessage(
-                        this.uploadTask,
-                        error
-                    );
-                    send(falureMessage.toString());
-                    process.exit(0);
-                }
-            }
-            // start reading file stream
-            const readFileStream = fs.createReadStream(
-                this.uploadTask.metadata.filePath
-            );
-            const passThroughStream = new stream.PassThrough();
-            // Configure the S3 upload parameters
-            const uploadParams = {
-                ...fileParams,
-                Body: passThroughStream // Use the PassThrough stream as the Body
-            };
-            // Handle the finish event when the stream processing is complete
-            readFileStream.pipe(passThroughStream).on('finish', () => {
-                console.log('Reading stream done');
-            });
 
-            // Upload the data directly to S3 using the S3 upload method
-            const upload = this.s3.upload(
-                uploadParams,
-                (err: any, res: any) => {
-                    if (err) {
-                        const falureMessage = new FailureMessage(
-                            this.uploadTask
-                        );
-                        send(falureMessage.toString());
-                        process.exit(1);
-                    } else {
-                        const successMessage = new SuccessMessage(
-                            this.uploadTask
-                        );
-                        send(successMessage.toString());
-                        process.exit(0);
-                    }
-                }
+    async executeUpload() {
+        const fileParams = {
+            Bucket: this.bucketName,
+            Key: this.uploadTask.metadata.fileName
+        };
+        try {
+            await this.s3.headObject(fileParams).promise();
+            this.triggerFailureUpload(
+                `file ${this.uploadTask.metadata.fileName} is existed`
             );
-            upload.on('httpUploadProgress', (progress: any) => {
-                // Calculate the percentage completed
-                const percentCompleted =
-                    (progress.loaded / this.uploadTask.metadata.size) * 100;
-                const progressMessage = new ProgressMessage(
-                    percentCompleted,
-                    this.uploadTask
+        } catch (error: any) {
+            if (error.name === 'NotFound') {
+                //continue
+                console.log('File Not Found Continue Upload');
+            } else {
+                throw new ChildError(
+                    process.pid,
+                    ChildErrorCode.E01,
+                    'Can Not Connecting to S3 Server'
                 );
-                send(progressMessage.toString());
-                console.log(`Upload Progress: ${percentCompleted.toFixed(2)}%`);
-            });
-        } catch (error) {
-            throw new ChildError(
-                process.pid,
-                ChildErrorCode.E01,
-                `Issue happen during upload ${error}`
-            );
+            }
         }
+        const readFileStream = fs.createReadStream(
+            this.uploadTask.metadata.filePath
+        );
+        const passThroughStream = new stream.PassThrough();
+
+        const listStream = [readFileStream, passThroughStream];
+        await this.awaitUploadStream(
+            readFileStream,
+            passThroughStream,
+            fileParams,
+            listStream
+        );
     }
 
     async executeUploadMock() {
@@ -123,21 +72,67 @@ export default class AwsService extends UploadStrategyBase {
                 Math.round(percentCompleted) % 10 == 0
             ) {
                 archo = Math.round(percentCompleted);
-                const progressMessage = new ProgressMessage(
-                    archo,
-                    this.uploadTask
-                );
-                send(progressMessage.toString());
+                this.triggerProgressUpload(archo);
             }
         }
         if (!err) {
-            const successMessage = new SuccessMessage(this.uploadTask);
-            send(successMessage.toString());
-            process.exit(1);
+            this.triggerFailureUpload();
         } else {
-            const failureMessage = new FailureMessage(this.uploadTask);
-            send(failureMessage.toString());
-            process.exit(0);
+            this.triggerSuccessUpload();
         }
     }
+
+    private awaitUploadStream = <T>(
+        inputSteam: any,
+        outputStream: any,
+        fileParams: any,
+        allStreamsToCatchError: any[]
+    ) => {
+        return new Promise<T>((resolve, reject) => {
+            allStreamsToCatchError.forEach((currentStream: any) => {
+                currentStream.on('error', (e: Error) => {
+                    reject(
+                        new ChildError(
+                            process.pid,
+                            ChildErrorCode.E01,
+                            'Stream Dead'
+                        )
+                    );
+                });
+            });
+
+            inputSteam.pipe(outputStream).on('finish', (data: T) => {});
+
+            // Configure the S3 upload parameters
+            const uploadParams = {
+                ...fileParams,
+                Body: outputStream
+            };
+
+            // Upload the data directly to S3 using the S3 upload method
+            const upload = this.s3.upload(
+                uploadParams,
+                (err: any, res: any) => {
+                    if (err) {
+                        reject(
+                            new ChildError(
+                                process.pid,
+                                ChildErrorCode.E01,
+                                `${err}`
+                            )
+                        );
+                    } else {
+                        resolve('Uploading Success' as T);
+                        this.triggerSuccessUpload();
+                    }
+                }
+            );
+            upload.on('httpUploadProgress', (progress: any) => {
+                // Calculate the percentage completed
+                const percentCompleted =
+                    (progress.loaded / this.uploadTask.metadata.size) * 100;
+                this.triggerProgressUpload(percentCompleted);
+            });
+        });
+    };
 }
