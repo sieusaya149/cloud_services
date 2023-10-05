@@ -11,7 +11,7 @@ export enum TaskEvent {
     FailureTask = 'FailureTask'
 }
 
-export interface MasterMessage {
+export interface MasterCommand {
     uploadTask: UploadTask;
 }
 export class TaskEventEmmitter extends EventEmitter {
@@ -30,7 +30,7 @@ export class TaskEventEmmitter extends EventEmitter {
                 await Notify.pushNotify(NotifyType.newTask, newTask);
                 console.log('publish notify done');
                 const worker = cluster.fork();
-                const input: MasterMessage = {
+                const input: MasterCommand = {
                     uploadTask: newTask
                 };
                 worker.send(input);

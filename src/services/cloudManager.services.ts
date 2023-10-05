@@ -2,6 +2,7 @@ import Queue from '~/helpers/queue';
 import {UploadTask, WorkerInfo} from '~/helpers/workerFtTask';
 import {TaskEventEmmitter, TaskEvent} from './taskEvent.services';
 import {CloudProvider} from 'packunpackservice';
+import {MasterError, MasterErrorCode} from '~/errorHandling/masterError';
 
 interface CloudManagerI {
     addNewTask(uploadTask: UploadTask): any;
@@ -82,7 +83,11 @@ export default class CloudManager implements CloudManagerI {
     // trigger before fork new child to start uploadTask
     public startProcessingTask(cloudProvider: CloudProvider) {
         if (!this.isAvaiWorker(cloudProvider)) {
-            throw new Error('Worker is busy now');
+            throw new MasterError(
+                process.pid,
+                MasterErrorCode.E01,
+                'Worker is busy now'
+            );
         }
         const worker = this.getWorker(cloudProvider);
         worker.startNewTask();
@@ -93,11 +98,19 @@ export default class CloudManager implements CloudManagerI {
         const cloudProvider = cloudConfig.type;
         const frontTask = this.getFrontTask(cloudConfig.type);
         if (!frontTask) {
-            throw new Error('No Front Task in the queue');
+            throw new MasterError(
+                process.pid,
+                MasterErrorCode.E00,
+                'No Front Task in the queue'
+            );
         }
         // check the id is correct front task
         if (uploadTask.id != frontTask.id) {
-            throw new Error('Invalid task was handled');
+            throw new MasterError(
+                process.pid,
+                MasterErrorCode.E02,
+                'Invalid task handling'
+            );
         } else {
             this.removeFrontTask(cloudProvider);
         }
@@ -122,11 +135,19 @@ export default class CloudManager implements CloudManagerI {
         const cloudProvider = cloudConfig.type;
         const frontTask = this.getFrontTask(cloudProvider);
         if (!frontTask) {
-            throw new Error('No Front Task in the queue');
+            throw new MasterError(
+                process.pid,
+                MasterErrorCode.E00,
+                'No Front Task in the queue'
+            );
         }
         // check the id is correct front task
         if (uploadTask.id != frontTask.id) {
-            throw new Error('Invalid task was handled');
+            throw new MasterError(
+                process.pid,
+                MasterErrorCode.E02,
+                'Invalid task handling'
+            );
         } else {
             if (!frontTask.shouldRetry()) {
                 this.removeFrontTask(cloudProvider);
@@ -177,10 +198,18 @@ export default class CloudManager implements CloudManagerI {
     private removeFrontTask(cloudProvider: CloudProvider) {
         const taskQueue = this.uploadTasksMap.get(cloudProvider);
         if (!taskQueue) {
-            throw new Error(`No queue for ${cloudProvider}`);
+            throw new MasterError(
+                process.pid,
+                MasterErrorCode.E00,
+                `No queue for ${cloudProvider}`
+            );
         }
         if (taskQueue.isEmpty()) {
-            throw new Error(`No Task in Queue`);
+            throw new MasterError(
+                process.pid,
+                MasterErrorCode.E00,
+                `No task In queue`
+            );
         }
         taskQueue.pop_front();
     }

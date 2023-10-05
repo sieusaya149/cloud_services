@@ -1,4 +1,4 @@
-import {MasterMessage} from '../taskEvent.services';
+import {MasterCommand} from '../taskEvent.services';
 // import {WorkerMessage, WorkerStatus} from '../config';
 import {
     SuccessMessage,
@@ -13,7 +13,7 @@ function send(message: string) {
 
 export default class MockService {
     constructor() {}
-    uploadingFile(masterMsg: MasterMessage) {
+    uploadingFile(masterMsg: MasterCommand) {
         const {uploadTask} = masterMsg;
         // const err = Math.random() <= 0.5;
         const err = false;

@@ -8,6 +8,7 @@ import {
 } from '../ipcServices/ipcMessage';
 import {UploadTask} from '~/helpers/workerFtTask';
 import {UploadStrategyBase} from '~/services/uploadServices/uploadStrategy';
+import {ChildErrorCode, ChildError} from '~/errorHandling/childError';
 
 function send(message: string) {
     if (process.send) {
@@ -29,68 +30,85 @@ export default class AwsService extends UploadStrategyBase {
         this.bucketName = bucketName;
     }
     async executeUpload() {
-        const readFileStream = fs.createReadStream(
-            this.uploadTask.metadata.filePath
-        );
-        // Create a PassThrough stream to pipe data to S3
-        const passThroughStream = new stream.PassThrough();
-        const fileParams = {
-            Bucket: this.bucketName,
-            Key: this.uploadTask.metadata.fileName // The S3 object key
-        };
         try {
-            await this.s3.headObject(fileParams).promise();
-            const falureMessage = new FailureMessage(
-                this.uploadTask,
-                `file ${this.uploadTask.metadata.fileName} is existed`
-            );
-            send(falureMessage.toString());
-            process.exit(0);
-        } catch (error: any) {
-            if (error.name === 'NotFound') {
-                //continue
-                console.log('File Not Found Contiue Upload');
-            } else {
-                // Handle other errors here....
+            const fileParams = {
+                Bucket: this.bucketName,
+                Key: this.uploadTask.metadata.fileName
+            };
+            try {
+                await this.s3.headObject(fileParams).promise();
                 const falureMessage = new FailureMessage(
                     this.uploadTask,
-                    error
+                    `file ${this.uploadTask.metadata.fileName} is existed`
                 );
                 send(falureMessage.toString());
                 process.exit(0);
+            } catch (error: any) {
+                if (error.name === 'NotFound') {
+                    //continue
+                    console.log('File Not Found Contiue Upload');
+                } else {
+                    // Handle other errors here....
+                    const falureMessage = new FailureMessage(
+                        this.uploadTask,
+                        error
+                    );
+                    send(falureMessage.toString());
+                    process.exit(0);
+                }
             }
-        }
-        // Configure the S3 upload parameters
-        const uploadParams = {
-            ...fileParams,
-            Body: passThroughStream // Use the PassThrough stream as the Body
-        };
-        // Handle the finish event when the stream processing is complete
-        readFileStream.pipe(passThroughStream);
-
-        // Upload the data directly to S3 using the S3 upload method
-        const upload = this.s3.upload(uploadParams, (err: any, res: any) => {
-            if (err) {
-                const falureMessage = new FailureMessage(this.uploadTask);
-                send(falureMessage.toString());
-                process.exit(1);
-            } else {
-                const successMessage = new SuccessMessage(this.uploadTask);
-                send(successMessage.toString());
-                process.exit(0);
-            }
-        });
-        upload.on('httpUploadProgress', (progress: any) => {
-            // Calculate the percentage completed
-            const percentCompleted =
-                (progress.loaded / this.uploadTask.metadata.size) * 100;
-            const progressMessage = new ProgressMessage(
-                percentCompleted,
-                this.uploadTask
+            // start reading file stream
+            const readFileStream = fs.createReadStream(
+                this.uploadTask.metadata.filePath
             );
-            send(progressMessage.toString());
-            console.log(`Upload Progress: ${percentCompleted.toFixed(2)}%`);
-        });
+            const passThroughStream = new stream.PassThrough();
+            // Configure the S3 upload parameters
+            const uploadParams = {
+                ...fileParams,
+                Body: passThroughStream // Use the PassThrough stream as the Body
+            };
+            // Handle the finish event when the stream processing is complete
+            readFileStream.pipe(passThroughStream).on('finish', () => {
+                console.log('Reading stream done');
+            });
+
+            // Upload the data directly to S3 using the S3 upload method
+            const upload = this.s3.upload(
+                uploadParams,
+                (err: any, res: any) => {
+                    if (err) {
+                        const falureMessage = new FailureMessage(
+                            this.uploadTask
+                        );
+                        send(falureMessage.toString());
+                        process.exit(1);
+                    } else {
+                        const successMessage = new SuccessMessage(
+                            this.uploadTask
+                        );
+                        send(successMessage.toString());
+                        process.exit(0);
+                    }
+                }
+            );
+            upload.on('httpUploadProgress', (progress: any) => {
+                // Calculate the percentage completed
+                const percentCompleted =
+                    (progress.loaded / this.uploadTask.metadata.size) * 100;
+                const progressMessage = new ProgressMessage(
+                    percentCompleted,
+                    this.uploadTask
+                );
+                send(progressMessage.toString());
+                console.log(`Upload Progress: ${percentCompleted.toFixed(2)}%`);
+            });
+        } catch (error) {
+            throw new ChildError(
+                process.pid,
+                ChildErrorCode.E01,
+                `Issue happen during upload ${error}`
+            );
+        }
     }
 
     async executeUploadMock() {

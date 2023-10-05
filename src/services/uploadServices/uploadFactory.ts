@@ -8,7 +8,7 @@ export class UploadFactory {
     constructor(uploadTask: UploadTask) {
         this.uploadTask = uploadTask;
     }
-    createUploadInstance(): UploadStrategyBase | null {
+    createUploadService(): UploadStrategyBase | null {
         const provider = this.uploadTask.cloudConfig.type;
         switch (provider) {
             case CloudProvider.AWS:

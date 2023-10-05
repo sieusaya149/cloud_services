@@ -1,3 +1,5 @@
+import {MasterError, MasterErrorCode} from '~/errorHandling/masterError';
+
 interface IQueue<T> {
     push_back(item: T): void;
     pop_front(): T | undefined;
@@ -13,8 +15,10 @@ export default class Queue<T> implements IQueue<T> {
 
     push_back(item: T): void {
         if (this.size() === this.capacity) {
-            throw Error(
-                'Queue has reached max capacity, you cannot add more items'
+            throw new MasterError(
+                process.pid,
+                MasterErrorCode.E02,
+                `Queue has reached max capacity, you cannot add more items`
             );
         }
         this.storage.push(item);
