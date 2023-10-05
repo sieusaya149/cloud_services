@@ -24,6 +24,7 @@
         "typescript": "^5.2.2"
     },
     "dependencies": {
+        "@aws-sdk/client-s3": "^3.425.0",
         "@types/amqplib": "^0.10.2",
         "@types/aws-sdk": "^2.7.0",
         "@types/dotenv": "^8.2.0",
@@ -31,6 +32,7 @@
         "@types/socket.io": "^3.0.2",
         "amqplib": "^0.10.3",
         "aws-sdk": "^2.1464.0",
+        "aws-sdk-js-codemod": "^0.18.3",
         "crypto": "^1.0.1",
         "dotenv": "^16.3.1",
         "eslint": "^8.50.0",
