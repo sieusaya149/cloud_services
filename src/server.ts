@@ -11,6 +11,7 @@ import {createServer} from 'http';
 import {WebSocketServer} from './socket-handler/webSockerServer';
 import {ChildErrorCode, ChildError} from './errorHandling/childError';
 import {UploadController} from './controllers/upload.controller';
+import {UploadTask} from './helpers/workerFtTask';
 const numCPUs = os.cpus().length;
 if (cluster.isPrimary) {
     console.log(`nums cpu is ${numCPUs}`);
@@ -54,7 +55,7 @@ if (cluster.isPrimary) {
         console.log(
             `**** WORKER ${process.pid} start for handing task id ${masterCommand.uploadTask.id}`
         );
-        const uploadTask = masterCommand.uploadTask;
+        const uploadTask = new UploadTask(masterCommand.uploadTask);
         const uploadFactory = new UploadFactory(uploadTask);
         const uploadService = uploadFactory.createUploadService();
         if (!uploadService) {

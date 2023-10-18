@@ -29,20 +29,30 @@ export default class AwsService extends UploadStrategyBase {
             Bucket: this.bucketName,
             Key: this.uploadTask.metadata.fileName
         };
+        let canUpload = false;
         try {
-            await this.s3.headObject(fileParams).promise();
-            this.triggerFailureUpload(
-                `file ${this.uploadTask.metadata.fileName} is existed`
-            );
+            let copyVersion = 1;
+            while (!canUpload) {
+                await this.s3.headObject(fileParams).promise();
+                console.warn(
+                    `file ${fileParams.Key} is existed on AWS already`
+                );
+                fileParams.Key =
+                    this.uploadTask.metadata.fileName + ` (${copyVersion})`;
+                console.warn(`rename file to ${fileParams.Key}`);
+                copyVersion = copyVersion + 1;
+            }
         } catch (error: any) {
             if (error.name === 'NotFound') {
+                canUpload = true;
                 //continue
                 console.log('File Not Found Continue Upload');
             } else {
+                console.log(error);
                 throw new ChildError(
                     process.pid,
                     ChildErrorCode.E01,
-                    'Can Not Connecting to S3 Server'
+                    'Can Not Connecting to S3 Service'
                 );
             }
         }
@@ -122,8 +132,10 @@ export default class AwsService extends UploadStrategyBase {
                             )
                         );
                     } else {
-                        resolve('Uploading Success' as T);
+                        console.log(res)
+                        this.uploadTask.setCloudInforWhenSuccess(res)
                         this.triggerSuccessUpload();
+                        resolve('Uploading Success' as T);
                     }
                 }
             );
