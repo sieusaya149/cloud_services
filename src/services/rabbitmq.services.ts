@@ -54,8 +54,8 @@ export default class RabbitMqServices {
     static publishMessage = async (
         message: string,
         exchangeName: string,
-        routingKey: string,
-        typeExchange = 'direct'
+        routingKey: string = '',
+        typeExchange = 'fanout'
     ) => {
         // Create a RabbitMQ connection within the scope of this function.
         if (!rabbitMqUri) {
@@ -68,11 +68,17 @@ export default class RabbitMqServices {
             const channel = await connection.createChannel();
             // Declare the exchange (you can also declare queues here).
             // Make sure the exchange and queue definitions match your RabbitMQ setup.
+            console.log(
+                `assert exchange ${exchangeName} with type is ${typeExchange}`
+            );
             await channel.assertExchange(exchangeName, typeExchange, {
                 durable: true
             });
 
             // Publish the message to the exchange.
+            console.log(
+                `publish message to exchange ${exchangeName} with routing key is ${routingKey}`
+            );
             channel.publish(exchangeName, routingKey, Buffer.from(message));
 
             // Close the channel.
