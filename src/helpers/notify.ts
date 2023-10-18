@@ -35,11 +35,6 @@ export class Notify implements NotifyI {
     static async pushNotify(notifyType: NotifyType, uploadTask: UploadTask) {
         console.log(`RABBIT MQ: START Pushing New Notify ${notifyType} to MQ`);
         const notifyMsg = this.getNotifyMsg(notifyType, uploadTask);
-        await RabbitMqServices.publishMessage(
-            notifyMsg,
-            exchangeNotify,
-            queueNotify
-        );
-        console.log(`RABBIT MQ: PUBLISHED new Message`);
+        await RabbitMqServices.publishMessage(notifyMsg, exchangeNotify);
     }
 }

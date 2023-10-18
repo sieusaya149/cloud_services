@@ -2,7 +2,7 @@ import cluster from 'cluster';
 import os from 'os';
 import RabbitMqServices from './services/rabbitmq.services';
 import CloudManager from './services/cloudManager.services';
-import {MasterCommand} from './services/taskEvent.services';
+import {MasterCommand} from './events/taskingEvent';
 import {autoSendTask} from './simulationPushTask';
 import {IpcMessageFactory} from './services/ipcServices/ipcMessage';
 import {UploadFactory} from './services/uploadServices/uploadFactory';
@@ -10,6 +10,8 @@ import express, {Express} from 'express';
 import {createServer} from 'http';
 import {WebSocketServer} from './socket-handler/webSockerServer';
 import {ChildErrorCode, ChildError} from './errorHandling/childError';
+import {UploadController} from './controllers/upload.controller';
+import {UploadTask} from './helpers/workerFtTask';
 const numCPUs = os.cpus().length;
 if (cluster.isPrimary) {
     console.log(`nums cpu is ${numCPUs}`);
@@ -53,7 +55,7 @@ if (cluster.isPrimary) {
         console.log(
             `**** WORKER ${process.pid} start for handing task id ${masterCommand.uploadTask.id}`
         );
-        const uploadTask = masterCommand.uploadTask;
+        const uploadTask = new UploadTask(masterCommand.uploadTask);
         const uploadFactory = new UploadFactory(uploadTask);
         const uploadService = uploadFactory.createUploadService();
         if (!uploadService) {
@@ -63,6 +65,7 @@ if (cluster.isPrimary) {
                 'Can Not Create Upload Service Instance'
             );
         }
-        await uploadService.executeUpload();
+        const uploadController = new UploadController(uploadService);
+        await uploadController.triggerUploadFile();
     });
 }

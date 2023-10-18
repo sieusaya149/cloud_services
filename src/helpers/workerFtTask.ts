@@ -12,18 +12,57 @@ export interface UploadTaskI {
     retryTime: number;
 }
 
+type CloudUploadInfo = {
+    ETag: string;
+    ServerSideEncryption: string;
+    Location: string;
+    key: string;
+    Key: string;
+    Bucket: string;
+};
+
 export class UploadTask implements UploadTaskI {
     id: string;
     cloudConfig: CloudConfig;
     metadata: PublishFileData;
     createdDate: Date;
+    cloudUploadInfo: CloudUploadInfo = {} as CloudUploadInfo;
     retryTime: number;
-    constructor(cloudConfig: CloudConfig, metaData: PublishFileData) {
-        this.id = randomUUID();
-        this.cloudConfig = cloudConfig;
-        this.metadata = metaData;
-        this.createdDate = new Date();
-        this.retryTime = 0;
+
+    public constructor(
+        uploadTask?: UploadTask,
+        cloudConfig?: CloudConfig,
+        metaData?: PublishFileData
+    ) {
+        if (uploadTask) {
+            this.id = uploadTask.id;
+            this.cloudConfig = uploadTask.cloudConfig;
+            this.metadata = uploadTask.metadata;
+            this.createdDate = uploadTask.createdDate;
+            this.retryTime = uploadTask.retryTime;
+        } else if (cloudConfig && metaData) {
+            this.id = randomUUID();
+            this.cloudConfig = cloudConfig;
+            this.metadata = metaData;
+            this.createdDate = new Date();
+            this.retryTime = 0;
+        } else {
+            throw new Error('Can not create upload task correctly');
+        }
+    }
+
+    public setCloudInforWhenSuccess(resultUpload: any) {
+        console.log('reset cloudUploadInfor')
+        this.cloudUploadInfo.ETag = resultUpload.ETag || 'Etag not provided';
+        this.cloudUploadInfo.ServerSideEncryption =
+            resultUpload.ServerSideEncryption ||
+            'ServerSideEncryption not provided';
+        this.cloudUploadInfo.Location =
+            resultUpload.Location || 'Location not provided';
+        this.cloudUploadInfo.key = resultUpload.key || 'key not provided';
+        this.cloudUploadInfo.Key = resultUpload.Key || 'Key not provided';
+        this.cloudUploadInfo.Bucket =
+            resultUpload.Bucket || 'Bucket not provided';
     }
 
     public shouldRetry(): boolean {

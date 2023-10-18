@@ -1,4 +1,4 @@
-import {MasterCommand} from '../taskEvent.services';
+import {MasterCommand} from '../../events/taskingEvent';
 // import {WorkerMessage, WorkerStatus} from '../config';
 import {
     SuccessMessage,
