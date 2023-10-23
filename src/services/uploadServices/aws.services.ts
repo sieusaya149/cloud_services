@@ -9,6 +9,7 @@ import {
 import {UploadTask} from '~/helpers/workerFtTask';
 import {UploadStrategyBase} from '~/services/uploadServices/uploadStrategy';
 import {ChildError, ChildErrorCode} from '~/errorHandling/childError';
+import {getExtFromFile} from '~/utils/utils';
 
 export default class AwsService extends UploadStrategyBase {
     private s3;
@@ -37,8 +38,11 @@ export default class AwsService extends UploadStrategyBase {
                 console.warn(
                     `file ${fileParams.Key} is existed on AWS already`
                 );
+                const {rawFilename, extension} = getExtFromFile(
+                    this.uploadTask.metadata.fileName
+                );
                 fileParams.Key =
-                    this.uploadTask.metadata.fileName + ` (${copyVersion})`;
+                    rawFilename + `(${copyVersion})` + `.${extension}`;
                 console.warn(`rename file to ${fileParams.Key}`);
                 copyVersion = copyVersion + 1;
             }
@@ -132,8 +136,8 @@ export default class AwsService extends UploadStrategyBase {
                             )
                         );
                     } else {
-                        console.log(res)
-                        this.uploadTask.setCloudInforWhenSuccess(res)
+                        console.log(res);
+                        this.uploadTask.setCloudInforWhenSuccess(res);
                         this.triggerSuccessUpload();
                         resolve('Uploading Success' as T);
                     }

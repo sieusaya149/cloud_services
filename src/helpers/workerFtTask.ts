@@ -52,7 +52,7 @@ export class UploadTask implements UploadTaskI {
     }
 
     public setCloudInforWhenSuccess(resultUpload: any) {
-        console.log('reset cloudUploadInfor')
+        console.log('reset cloudUploadInfor');
         this.cloudUploadInfo.ETag = resultUpload.ETag || 'Etag not provided';
         this.cloudUploadInfo.ServerSideEncryption =
             resultUpload.ServerSideEncryption ||
