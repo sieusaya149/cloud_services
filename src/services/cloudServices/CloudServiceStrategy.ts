@@ -2,7 +2,7 @@ import {CloudProvider} from 'packunpackservice';
 import {UploadTask, Task} from '../../helpers/workerFtTask';
 import {WorkerEvent, WorkerEventEmitter} from '~/events/wokerEvent';
 
-export class UploadStrategyBase {
+export class CloudServiceStrategyBase {
     protected task: Task;
     protected taskEvent: WorkerEventEmitter;
 

@@ -15,11 +15,11 @@ import {
     SuccessMessage
 } from '../ipcServices/ipcMessage';
 import {UploadTask, Task, TaskType, DeleteTask} from '~/helpers/workerFtTask';
-import {UploadStrategyBase} from '~/services/uploadServices/uploadStrategy';
+import {CloudServiceStrategyBase} from '~/services/cloudServices/CloudServiceStrategy';
 import {ChildError, ChildErrorCode} from '~/errorHandling/childError';
 import {getExtFromFile} from '~/utils/utils';
 
-export default class AwsService extends UploadStrategyBase {
+export default class AwsService extends CloudServiceStrategyBase {
     private s3;
     private bucketName;
     constructor(task: Task) {

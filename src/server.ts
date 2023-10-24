@@ -5,7 +5,7 @@ import CloudManager from './services/cloudManager.services';
 import {MasterCommand} from './events/taskingEvent';
 import {autoSendTask} from './simulationPushTask';
 import {IpcMessageFactory} from './services/ipcServices/ipcMessage';
-import {CloudServiceFactory} from './services/uploadServices/CloudServiceFactory';
+import {CloudServiceFactory} from './services/cloudServices/CloudServiceFactory';
 import express, {Express} from 'express';
 import {createServer} from 'http';
 import {WebSocketServer} from './socket-handler/webSockerServer';

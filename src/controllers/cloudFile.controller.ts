@@ -1,15 +1,15 @@
 import {WorkerEventEmitter} from '~/events/wokerEvent';
-import {UploadStrategyBase} from '../services/uploadServices/uploadStrategy';
+import {CloudServiceStrategyBase} from '../services/cloudServices/CloudServiceStrategy';
 import {TaskType} from '~/helpers/workerFtTask';
 
 export class CloudFileController {
-    private uploadService: UploadStrategyBase;
-    constructor(uploadService: UploadStrategyBase) {
-        this.uploadService = uploadService;
+    private cloudService: CloudServiceStrategyBase;
+    constructor(cloudService: CloudServiceStrategyBase) {
+        this.cloudService = cloudService;
     }
 
     async evaluateTrigger() {
-        const currentTask = this.uploadService.getTask();
+        const currentTask = this.cloudService.getTask();
         if (currentTask.type == TaskType.UPLOAD) {
             await this.triggerUploadFile();
         } else if (currentTask.type == TaskType.DELETE) {
@@ -24,10 +24,10 @@ export class CloudFileController {
         uploadEvent.setupProgressUploadEvent();
 
         try {
-            await this.uploadService.executeUpload();
-            this.uploadService.triggerSuccessUpload();
+            await this.cloudService.executeUpload();
+            this.cloudService.triggerSuccessUpload();
         } catch (error) {
-            this.uploadService.triggerFailureUpload(`${error}`);
+            this.cloudService.triggerFailureUpload(`${error}`);
         }
     }
 
@@ -37,10 +37,10 @@ export class CloudFileController {
         uploadEvent.setupFailureDeleteEvent();
 
         try {
-            await this.uploadService.executeDelete();
-            this.uploadService.triggerSuccessDelete();
+            await this.cloudService.executeDelete();
+            this.cloudService.triggerSuccessDelete();
         } catch (error) {
-            this.uploadService.triggerFailureDelete(`${error}`);
+            this.cloudService.triggerFailureDelete(`${error}`);
         }
     }
 }
