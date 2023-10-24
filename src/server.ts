@@ -11,7 +11,10 @@ import {createServer} from 'http';
 import {WebSocketServer} from './socket-handler/webSockerServer';
 import {ChildErrorCode, ChildError} from './errorHandling/childError';
 import {CloudFileController} from './controllers/cloudFile.controller';
-import {DeleteTask, TaskType, UploadTask} from './helpers/workerFtTask';
+import {TaskType} from './helpers/Tasks/Task';
+import {UploadTask} from './helpers/Tasks/UploadTask';
+import {DeleteTask} from './helpers/Tasks/DeleteTask';
+
 const numCPUs = os.cpus().length;
 if (cluster.isPrimary) {
     console.log(`nums cpu is ${numCPUs}`);

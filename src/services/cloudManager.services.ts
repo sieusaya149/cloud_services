@@ -1,5 +1,6 @@
 import Queue from '~/helpers/queue';
-import {WorkerInfo, Task} from '~/helpers/workerFtTask';
+import {WorkerInfo} from '~/helpers/workerInfo';
+import {Task} from '../helpers/Tasks/Task';
 import {TaskEventEmmitter, TaskEvent} from '../events/taskingEvent';
 import {CloudProvider} from 'packunpackservice';
 import {MasterError, MasterErrorCode} from '~/errorHandling/masterError';

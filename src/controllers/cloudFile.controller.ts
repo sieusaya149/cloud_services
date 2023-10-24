@@ -1,6 +1,6 @@
 import {WorkerEventEmitter} from '~/events/wokerEvent';
 import {CloudServiceStrategyBase} from '../services/cloudServices/CloudServiceStrategy';
-import {TaskType} from '~/helpers/workerFtTask';
+import {TaskType} from '../helpers/Tasks/Task';
 
 export class CloudFileController {
     private cloudService: CloudServiceStrategyBase;

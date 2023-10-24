@@ -1,5 +1,6 @@
 import EventEmitter from 'events';
-import {DeleteTask, UploadTask} from '../helpers/workerFtTask';
+import {DeleteTask} from '../helpers/Tasks/DeleteTask';
+import {UploadTask} from '../helpers/Tasks/UploadTask';
 import {
     FailureMessage,
     ProgressMessage,

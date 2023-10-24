@@ -1,5 +1,5 @@
 import {CloudUploadMsg} from 'packunpackservice';
-import {UploadTask} from './workerFtTask';
+import {UploadTask} from './Tasks/UploadTask';
 
 export class UploadTaskParser {
     private listTask: UploadTask[];

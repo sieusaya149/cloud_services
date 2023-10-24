@@ -12,8 +12,6 @@ export const exchangeProgress =
     process.env.EXCHANGE_PROGRESS || 'progress_exchange';
 export const queueProgress = process.env.QUEUE_PROGRESS || 'progress_queue';
 
-import {UploadTask} from './helpers/workerFtTask';
-
 export const ACCESS_KEY_ID = process.env.ACCESS_KEY_ID || '';
 export const SECRET_KEY = process.env.SECRET_KEY || '';
 export const BUCKET_NAME = process.env.BUCKET_NAME || '';

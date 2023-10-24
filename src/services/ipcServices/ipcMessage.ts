@@ -3,7 +3,8 @@
 import {randomUUID} from 'crypto';
 import {Notify, NotifyType} from '../../helpers/notify';
 import CloudManager from '../cloudManager.services';
-import {UploadTask, Task, TaskType} from '../../helpers/workerFtTask';
+import {Task, TaskType} from '../../helpers/Tasks/Task';
+import {UploadTask} from '../../helpers/Tasks/UploadTask';
 import {TaskEvent} from '../../events/taskingEvent';
 import {Progress} from '../../helpers/progress';
 import {WebSocketServer} from '../../socket-handler/webSockerServer';

@@ -1,7 +1,6 @@
 import {
     HeadObjectCommand,
     S3Client,
-    PutObjectCommand,
     DeleteObjectCommand
 } from '@aws-sdk/client-s3';
 
@@ -9,12 +8,10 @@ import {Upload} from '@aws-sdk/lib-storage';
 
 import fs from 'fs';
 import stream from 'stream';
-import {
-    FailureMessage,
-    ProgressMessage,
-    SuccessMessage
-} from '../ipcServices/ipcMessage';
-import {UploadTask, Task, TaskType, DeleteTask} from '~/helpers/workerFtTask';
+import {Task, TaskType} from '~/helpers/Tasks/Task';
+import {UploadTask} from '~/helpers/Tasks/UploadTask';
+import {DeleteTask} from '~/helpers/Tasks/DeleteTask';
+
 import {CloudServiceStrategyBase} from '~/services/cloudServices/CloudServiceStrategy';
 import {ChildError, ChildErrorCode} from '~/errorHandling/childError';
 import {getExtFromFile} from '~/utils/utils';

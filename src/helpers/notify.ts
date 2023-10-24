@@ -1,4 +1,4 @@
-import {Task} from './workerFtTask';
+import {Task} from './Tasks/Task';
 import RabbitMqServices from '../services/rabbitmq.services';
 import {exchangeNotify, queueNotify} from '~/config';
 export enum NotifyType {

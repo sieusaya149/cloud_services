@@ -1,5 +1,4 @@
-import {CloudProvider} from 'packunpackservice';
-import {UploadTask, Task} from '../../helpers/workerFtTask';
+import {Task} from '../../helpers/Tasks/Task';
 import {WorkerEvent, WorkerEventEmitter} from '~/events/wokerEvent';
 
 export class CloudServiceStrategyBase {

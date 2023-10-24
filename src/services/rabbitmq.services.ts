@@ -1,6 +1,6 @@
 import amqp from 'amqplib';
 import {queueCloud, exchangeCloud, rabbitMqUri} from '../config';
-import {DeleteTask} from '../helpers/workerFtTask';
+import {DeleteTask} from '../helpers/Tasks/DeleteTask';
 import CloudManager from './cloudManager.services';
 import {UnpackingFactory, PackUnPackType} from 'packunpackservice';
 import {UploadTaskParser} from '~/helpers/taskParser';

@@ -1,5 +1,5 @@
 import {CloudProvider} from 'packunpackservice';
-import {Task} from '../../helpers/workerFtTask';
+import {Task} from '../../helpers/Tasks/Task';
 import AwsService from './aws.services';
 import {CloudServiceStrategyBase} from './CloudServiceStrategy';
 

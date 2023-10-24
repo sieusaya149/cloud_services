@@ -1,10 +1,8 @@
 import EventEmitter from 'events';
 import CloudManager from '../services/cloudManager.services';
-import {UploadTask, Task} from '../helpers/workerFtTask';
+import {Task} from '../helpers/Tasks/Task';
 import cluster from 'cluster';
 import {Notify, NotifyType} from '../helpers/notify';
-import RabbitMqServices from '../services/rabbitmq.services';
-import {exchangeNotify, queueNotify} from '~/config';
 export enum TaskEvent {
     NewTask = 'NewTask',
     SuccessTask = 'SuccessTask',
