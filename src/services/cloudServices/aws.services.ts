@@ -170,10 +170,19 @@ export default class AwsService extends CloudServiceStrategyBase {
             };
 
             // Upload the data directly to S3 using the S3 upload method
-            new Upload({
+            const upload = new Upload({
                 client: this.s3,
                 params: uploadParams
-            })
+            });
+
+            upload.on('httpUploadProgress', (progress: any) => {
+                // Calculate the percentage completed
+                const percentCompleted =
+                    (progress.loaded / uploadTask.metadata.size) * 100;
+                this.triggerProgressUpload(percentCompleted);
+            });
+
+            upload
                 .done()
                 .then((data) => {
                     console.log('File uploaded successfully:', data);
@@ -191,13 +200,6 @@ export default class AwsService extends CloudServiceStrategyBase {
                         )
                     );
                 });
-
-            // upload.on('httpUploadProgress', (progress: any) => {
-            //     // Calculate the percentage completed
-            //     const percentCompleted =
-            //         (progress.loaded / uploadTask.metadata.size) * 100;
-            //     this.triggerProgressUpload(percentCompleted);
-            // });
         });
     };
 }
