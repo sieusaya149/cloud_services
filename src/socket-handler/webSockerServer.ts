@@ -1,5 +1,5 @@
 import {Server, Socket} from 'socket.io';
-import {UploadTask} from '../helpers/workerFtTask';
+import {UploadTask} from '../helpers/Tasks/UploadTask';
 import {CloudProvider} from 'packunpackservice';
 
 const WEBSOCKET_CORS = {

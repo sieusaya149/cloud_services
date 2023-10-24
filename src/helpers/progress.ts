@@ -1,5 +1,5 @@
 import {ProgressMessage} from '../services/ipcServices/ipcMessage';
-import {UploadTask} from './workerFtTask';
+import {UploadTask} from './Tasks/UploadTask';
 import RabbitMqServices from '../services/rabbitmq.services';
 import {exchangeProgress, queueProgress} from '~/config';
 
@@ -17,7 +17,7 @@ export class Progress implements ProgressI {
     updatedAt: Date;
     private constructor(progressMessage: ProgressMessage) {
         this.taskId = progressMessage.id;
-        this.uploadTask = progressMessage.uploadTask;
+        this.uploadTask = progressMessage.task as UploadTask;
         this.percentage = progressMessage.progress;
         this.updatedAt = new Date();
     }

@@ -1,14 +1,17 @@
 import EventEmitter from 'events';
-import {UploadTask} from '../helpers/workerFtTask';
+import {DeleteTask} from '../helpers/Tasks/DeleteTask';
+import {UploadTask} from '../helpers/Tasks/UploadTask';
 import {
     FailureMessage,
     ProgressMessage,
     SuccessMessage
 } from '~/services/ipcServices/ipcMessage';
-export enum UploadEvent {
+export enum WorkerEvent {
     PROGRESS_UPLOAD = 'PROGRESS UPLOAD',
     SUCCESS_UPLOAD = 'SUCCESS UPLOAD',
-    FAILURE_UPLOAD = 'FAILURE UPLOAD'
+    FAILURE_UPLOAD = 'FAILURE UPLOAD',
+    SUCCESS_DELETE = 'SUCCESS_DELETE',
+    FAILURE_DELETE = 'FAILURE_DELETE'
 }
 
 function sendIpcMessage(message: string) {
@@ -17,22 +20,22 @@ function sendIpcMessage(message: string) {
     }
 }
 
-export class UploadEventEmitter extends EventEmitter {
-    static instance: UploadEventEmitter;
+export class WorkerEventEmitter extends EventEmitter {
+    static instance: WorkerEventEmitter;
     private constructor() {
         super();
     }
 
     static getInstance() {
-        if (!UploadEventEmitter.instance) {
-            UploadEventEmitter.instance = new UploadEventEmitter();
+        if (!WorkerEventEmitter.instance) {
+            WorkerEventEmitter.instance = new WorkerEventEmitter();
         }
-        return UploadEventEmitter.instance;
+        return WorkerEventEmitter.instance;
     }
 
     setupProgressUploadEvent() {
         this.on(
-            UploadEvent.PROGRESS_UPLOAD,
+            WorkerEvent.PROGRESS_UPLOAD,
             async (percentCompleted: number, uploadTask: UploadTask) => {
                 const progressMessage = new ProgressMessage(
                     percentCompleted,
@@ -45,7 +48,7 @@ export class UploadEventEmitter extends EventEmitter {
     }
 
     setupSuccessUploadEvent() {
-        this.on(UploadEvent.SUCCESS_UPLOAD, async (uploadTask: UploadTask) => {
+        this.on(WorkerEvent.SUCCESS_UPLOAD, async (uploadTask: UploadTask) => {
             const successMessage = new SuccessMessage(uploadTask);
             sendIpcMessage(successMessage.toString());
             process.exit(0);
@@ -54,12 +57,28 @@ export class UploadEventEmitter extends EventEmitter {
 
     setupFailureUploadEvent() {
         this.on(
-            UploadEvent.FAILURE_UPLOAD,
+            WorkerEvent.FAILURE_UPLOAD,
             async (uploadTask: UploadTask, message?: string) => {
                 const failureMessage = new FailureMessage(uploadTask, message);
                 sendIpcMessage(failureMessage.toString());
                 process.exit(0);
             }
         );
+    }
+
+    setupSuccessDeleteEvent() {
+        this.on(WorkerEvent.SUCCESS_DELETE, async (deleteTask: DeleteTask) => {
+            const successMessage = new SuccessMessage(deleteTask);
+            sendIpcMessage(successMessage.toString());
+            process.exit(0);
+        });
+    }
+
+    setupFailureDeleteEvent() {
+        this.on(WorkerEvent.FAILURE_DELETE, async (deleteTask: DeleteTask) => {
+            const successMessage = new FailureMessage(deleteTask);
+            sendIpcMessage(successMessage.toString());
+            process.exit(0);
+        });
     }
 }

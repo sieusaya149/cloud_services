@@ -1,10 +1,8 @@
 import EventEmitter from 'events';
 import CloudManager from '../services/cloudManager.services';
-import {UploadTask} from '../helpers/workerFtTask';
+import {Task} from '../helpers/Tasks/Task';
 import cluster from 'cluster';
 import {Notify, NotifyType} from '../helpers/notify';
-import RabbitMqServices from '../services/rabbitmq.services';
-import {exchangeNotify, queueNotify} from '~/config';
 export enum TaskEvent {
     NewTask = 'NewTask',
     SuccessTask = 'SuccessTask',
@@ -12,7 +10,7 @@ export enum TaskEvent {
 }
 
 export interface MasterCommand {
-    uploadTask: UploadTask;
+    task: Task;
 }
 export class TaskEventEmmitter extends EventEmitter {
     constructor() {
@@ -20,18 +18,20 @@ export class TaskEventEmmitter extends EventEmitter {
     }
 
     setupNewTaskEvent() {
-        this.on(TaskEvent.NewTask, async (newTask: UploadTask) => {
+        this.on(TaskEvent.NewTask, async (task: Task) => {
             const cloudManagerInstance = CloudManager.getInstance();
-            const cloudConfig = newTask.cloudConfig;
+            const cloudConfig = task.cloudConfig;
             const cloudProvider = cloudConfig.type;
             if (cloudManagerInstance.isAvaiWorker(cloudProvider)) {
                 cloudManagerInstance.startProcessingTask(cloudProvider);
                 // TODO send message queue to notify the new task was executed
-                await Notify.pushNotify(NotifyType.newTask, newTask);
-                console.log('publish notify done');
+                await Notify.pushNotify(NotifyType.newTask, task);
+                console.log(
+                    'publish notify done forks child to handling new task'
+                );
                 const worker = cluster.fork();
                 const input: MasterCommand = {
-                    uploadTask: newTask
+                    task: task
                 };
                 worker.send(input);
             }
@@ -39,7 +39,7 @@ export class TaskEventEmmitter extends EventEmitter {
     }
 
     setupSucessTaskEvent() {
-        this.on(TaskEvent.SuccessTask, async (successTask: UploadTask) => {
+        this.on(TaskEvent.SuccessTask, async (successTask: Task) => {
             console.log(`SUCCESS TASK ${successTask.id}`);
             const cloudManagerInstance = CloudManager.getInstance();
             cloudManagerInstance.updateSuccessTask(successTask);
@@ -47,7 +47,7 @@ export class TaskEventEmmitter extends EventEmitter {
     }
 
     setupFailureTaskEvent() {
-        this.on(TaskEvent.FailureTask, async (failureTask: UploadTask) => {
+        this.on(TaskEvent.FailureTask, async (failureTask: Task) => {
             console.log(`FAILED TASK ${failureTask.id}`);
             const cloudManagerInstance = CloudManager.getInstance();
             cloudManagerInstance.updateFailureTask(failureTask);

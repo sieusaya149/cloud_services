@@ -1,13 +1,8 @@
 import amqp from 'amqplib';
-import cluster from 'cluster';
 import {queueCloud, exchangeCloud, rabbitMqUri} from '../config';
-import {UploadTask} from '../helpers/workerFtTask';
+import {DeleteTask} from '../helpers/Tasks/DeleteTask';
 import CloudManager from './cloudManager.services';
-import {
-    UnpackingFactory,
-    UnpackingMessage,
-    CloudUploadMsg
-} from 'packunpackservice';
+import {UnpackingFactory, PackUnPackType} from 'packunpackservice';
 import {UploadTaskParser} from '~/helpers/taskParser';
 export interface shareMessage {
     fileType: string;
@@ -37,13 +32,24 @@ export default class RabbitMqServices {
                 const unpackedData = unpackingInstance.unpack(
                     message.content.toString()
                 );
-                const uploadTaskParser = new UploadTaskParser();
-                const listUploadTask =
-                    uploadTaskParser.getTaskFromUnpackedData(unpackedData);
-                for (let index = 0; index < listUploadTask.length; index++) {
-                    CloudManager.getInstance().addNewTask(
-                        listUploadTask[index]
-                    );
+                console.log(`==> The new task is ${data.typeMsg}`);
+                if (data.typeMsg == PackUnPackType.CLOUD_UPLOAD) {
+                    const uploadTaskParser = new UploadTaskParser();
+                    const listUploadTask =
+                        uploadTaskParser.getTaskFromUnpackedData(unpackedData);
+                    for (
+                        let index = 0;
+                        index < listUploadTask.length;
+                        index++
+                    ) {
+                        CloudManager.getInstance().addNewTask(
+                            listUploadTask[index]
+                        );
+                    }
+                } else if (data.typeMsg == PackUnPackType.DELETE_CLOUD_FILE) {
+                    const {cloudConfig, fileInfor} = unpackedData.fileData;
+                    const deleteTask = new DeleteTask(cloudConfig, fileInfor);
+                    CloudManager.getInstance().addNewTask(deleteTask);
                 }
                 // Acknowledge the message when processing is complete.
                 channel.ack(message);

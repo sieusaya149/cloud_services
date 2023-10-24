@@ -1,5 +1,5 @@
 import {CloudConfig, CloudProvider, PublishFileData} from 'packunpackservice';
-import {UploadTask} from './helpers/workerFtTask';
+import {UploadTask} from './helpers/Tasks/UploadTask';
 import CloudManager from './services/cloudManager.services';
 import {Types} from 'mongoose';
 let numtaskIndex = 0; // this help monitor the nums of task was sent
@@ -48,9 +48,9 @@ export const autoSendTask = () => {
             size: 1000
         };
         const uploadTaskFake: UploadTask = new UploadTask(
-            undefined,
             fakeCloudConfig,
-            fakeFileData
+            fakeFileData,
+            undefined
         );
         CloudManager.getInstance().addNewTask(uploadTaskFake);
     }, INTERVAL_TIME);

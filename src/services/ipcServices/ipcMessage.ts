@@ -3,7 +3,8 @@
 import {randomUUID} from 'crypto';
 import {Notify, NotifyType} from '../../helpers/notify';
 import CloudManager from '../cloudManager.services';
-import {UploadTask} from '../../helpers/workerFtTask';
+import {Task, TaskType} from '../../helpers/Tasks/Task';
+import {UploadTask} from '../../helpers/Tasks/UploadTask';
 import {TaskEvent} from '../../events/taskingEvent';
 import {Progress} from '../../helpers/progress';
 import {WebSocketServer} from '../../socket-handler/webSockerServer';
@@ -17,24 +18,20 @@ enum TypeIpcMessage {
 interface IpcMessageI {
     id: string;
     type: TypeIpcMessage;
-    uploadTask: UploadTask;
+    task: Task;
 }
 
 class IpcMessageBase implements IpcMessageI {
     id: string;
     type: TypeIpcMessage;
     progress: number;
-    uploadTask: UploadTask;
+    task: Task;
     reason: any;
-    constructor(
-        type: TypeIpcMessage,
-        progress: number,
-        uploadTask: UploadTask
-    ) {
+    constructor(type: TypeIpcMessage, progress: number, task: Task) {
         this.id = randomUUID();
         this.type = type;
         this.progress = progress;
-        this.uploadTask = uploadTask;
+        this.task = task;
         this.reason = '';
     }
     getType(): string | null {
@@ -61,8 +58,8 @@ class IpcMessageBase implements IpcMessageI {
 }
 
 export class SuccessMessage extends IpcMessageBase {
-    constructor(successUploadTask: UploadTask) {
-        super(TypeIpcMessage.SUCCESS, 100, successUploadTask);
+    constructor(successTask: Task) {
+        super(TypeIpcMessage.SUCCESS, 100, successTask);
     }
     getType(): string | null {
         return TypeIpcMessage.SUCCESS;
@@ -70,14 +67,14 @@ export class SuccessMessage extends IpcMessageBase {
     async handlingMessage() {
         CloudManager.getInstance()
             .getEventEmmiter()
-            .emit(TaskEvent.SuccessTask, this.uploadTask);
-        await Notify.pushNotify(NotifyType.successTask, this.uploadTask);
+            .emit(TaskEvent.SuccessTask, this.task);
+        await Notify.pushNotify(NotifyType.successTask, this.task);
     }
 }
 
 export class FailureMessage extends IpcMessageBase {
-    constructor(FailureUploadTask: UploadTask, reason = 'None') {
-        super(TypeIpcMessage.FAILURE, 0, FailureUploadTask);
+    constructor(failureTask: Task, reason = 'None') {
+        super(TypeIpcMessage.FAILURE, 0, failureTask);
         this.reason = reason;
     }
     getType(): string | null {
@@ -86,8 +83,8 @@ export class FailureMessage extends IpcMessageBase {
     async handlingMessage() {
         CloudManager.getInstance()
             .getEventEmmiter()
-            .emit(TaskEvent.FailureTask, this.uploadTask);
-        await Notify.pushNotify(NotifyType.failureTask, this.uploadTask);
+            .emit(TaskEvent.FailureTask, this.task);
+        await Notify.pushNotify(NotifyType.failureTask, this.task);
     }
 }
 
@@ -102,7 +99,7 @@ export class ProgressMessage extends IpcMessageBase {
     async handlingMessage() {
         // await Progress.pushProgress(this);
         WebSocketServer.getInstance().updateProgressForUser(
-            this.uploadTask,
+            this.task as UploadTask,
             this.progress
         );
     }
@@ -116,13 +113,17 @@ export class IpcMessageFactory {
     create(): IpcMessageBase | null {
         switch (this.jsonData.type) {
             case TypeIpcMessage.SUCCESS:
-                return new SuccessMessage(this.jsonData.uploadTask);
+                return new SuccessMessage(this.jsonData.task);
             case TypeIpcMessage.FAILURE:
-                return new FailureMessage(this.jsonData.uploadTask);
+                return new FailureMessage(this.jsonData.task);
             case TypeIpcMessage.PROGRESS:
+                if (this.jsonData.task.type != TaskType.UPLOAD) {
+                    console.error('The task is not upload task');
+                    return new FailureMessage(this.jsonData.task);
+                }
                 return new ProgressMessage(
                     this.jsonData.progress,
-                    this.jsonData.uploadTask
+                    this.jsonData.task as UploadTask
                 );
             default:
                 return null;
