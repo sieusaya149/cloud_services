@@ -1,4 +1,4 @@
-import {UploadTask} from './workerFtTask';
+import {Task} from './workerFtTask';
 import RabbitMqServices from '../services/rabbitmq.services';
 import {exchangeNotify, queueNotify} from '~/config';
 export enum NotifyType {
@@ -8,33 +8,30 @@ export enum NotifyType {
 }
 interface NotifyI {
     type: NotifyType;
-    uploadTask: UploadTask;
+    task: Task;
     createdAt: Date;
     updatedAt: Date;
 }
 
 export class Notify implements NotifyI {
     type: NotifyType;
-    uploadTask: UploadTask;
+    task: Task;
     createdAt: Date;
     updatedAt: Date;
-    private constructor(notifyType: NotifyType, uploadTask: UploadTask) {
+    private constructor(notifyType: NotifyType, task: Task) {
         this.type = notifyType;
-        this.uploadTask = uploadTask;
+        this.task = task;
         this.createdAt = this.updatedAt = new Date();
     }
 
-    static getNotifyMsg(
-        notifyType: NotifyType,
-        uploadTask: UploadTask
-    ): string {
-        const notifyMsg = new Notify(notifyType, uploadTask);
+    static getNotifyMsg(notifyType: NotifyType, task: Task): string {
+        const notifyMsg = new Notify(notifyType, task);
         return JSON.stringify(notifyMsg);
     }
 
-    static async pushNotify(notifyType: NotifyType, uploadTask: UploadTask) {
+    static async pushNotify(notifyType: NotifyType, task: Task) {
         console.log(`RABBIT MQ: START Pushing New Notify ${notifyType} to MQ`);
-        const notifyMsg = this.getNotifyMsg(notifyType, uploadTask);
+        const notifyMsg = this.getNotifyMsg(notifyType, task);
         await RabbitMqServices.publishMessage(notifyMsg, exchangeNotify);
     }
 }

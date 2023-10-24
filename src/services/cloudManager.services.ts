@@ -1,19 +1,19 @@
 import Queue from '~/helpers/queue';
-import {UploadTask, WorkerInfo} from '~/helpers/workerFtTask';
+import {WorkerInfo, Task} from '~/helpers/workerFtTask';
 import {TaskEventEmmitter, TaskEvent} from '../events/taskingEvent';
 import {CloudProvider} from 'packunpackservice';
 import {MasterError, MasterErrorCode} from '~/errorHandling/masterError';
 
 interface CloudManagerI {
-    addNewTask(uploadTask: UploadTask): any;
-    updateSuccessTask(uploadTask: UploadTask): any;
-    updateFailureTask(uploadTask: UploadTask): any;
-    getAvaiTask(cloudProvider: CloudProvider): UploadTask | undefined;
+    addNewTask(task: Task): any;
+    updateSuccessTask(task: Task): any;
+    updateFailureTask(task: Task): any;
+    getAvaiTask(cloudProvider: CloudProvider): Task | undefined;
 }
 
 export default class CloudManager implements CloudManagerI {
     static instances: CloudManager;
-    private uploadTasksMap: Map<CloudProvider, Queue<UploadTask>>;
+    private TasksMap: Map<CloudProvider, Queue<Task>>;
     private workersMap: Map<CloudProvider, WorkerInfo>;
     private eventEmmiter: TaskEventEmmitter;
     // TODO
@@ -24,12 +24,12 @@ export default class CloudManager implements CloudManagerI {
 
     private constructor() {
         this.eventEmmiter = new TaskEventEmmitter();
-        this.uploadTasksMap = new Map();
+        this.TasksMap = new Map();
         this.workersMap = new Map();
         // init uploadTask map
-        this.uploadTasksMap.set(CloudProvider.AWS, new Queue<UploadTask>());
-        this.uploadTasksMap.set(CloudProvider.GOOGLE, new Queue<UploadTask>());
-        this.uploadTasksMap.set(CloudProvider.AZURE, new Queue<UploadTask>());
+        this.TasksMap.set(CloudProvider.AWS, new Queue<Task>());
+        this.TasksMap.set(CloudProvider.GOOGLE, new Queue<Task>());
+        this.TasksMap.set(CloudProvider.AZURE, new Queue<Task>());
         // init worker map
         this.workersMap.set(
             CloudProvider.AWS,
@@ -57,18 +57,18 @@ export default class CloudManager implements CloudManagerI {
         return this.eventEmmiter;
     }
 
-    public addNewTask(uploadTask: UploadTask): any {
+    public addNewTask(task: Task): any {
         console.log('CLOUD MANAGER:: new task arrived, push the queue');
-        const cloudConfig = uploadTask.cloudConfig;
+        console.log(task);
+        const cloudConfig = task.cloudConfig;
         const cloudProvider = cloudConfig.type;
-        let cloudQueue = this.uploadTasksMap.get(cloudProvider);
+        let cloudQueue = this.TasksMap.get(cloudProvider);
         if (!cloudQueue) {
-            cloudQueue = new Queue<UploadTask>();
+            cloudQueue = new Queue<Task>();
         }
-        cloudQueue.push_back(uploadTask);
-        console.log(uploadTask);
-        if (this.isAvaiWorker(cloudConfig.type)) {
-            const avaiTask = this.getAvaiTask(cloudConfig.type);
+        cloudQueue.push_back(task);
+        if (this.isAvaiWorker(cloudProvider)) {
+            const avaiTask = this.getAvaiTask(cloudProvider);
             // if has task, emit event 'NewTask'
             if (avaiTask) {
                 console.log(
@@ -93,8 +93,8 @@ export default class CloudManager implements CloudManagerI {
         worker.startNewTask();
     }
 
-    public updateSuccessTask(uploadTask: UploadTask): any {
-        const cloudConfig = uploadTask.cloudConfig;
+    public updateSuccessTask(task: Task): any {
+        const cloudConfig = task.cloudConfig;
         const cloudProvider = cloudConfig.type;
         const frontTask = this.getFrontTask(cloudConfig.type);
         if (!frontTask) {
@@ -105,7 +105,7 @@ export default class CloudManager implements CloudManagerI {
             );
         }
         // check the id is correct front task
-        if (uploadTask.id != frontTask.id) {
+        if (task.id != frontTask.id) {
             throw new MasterError(
                 process.pid,
                 MasterErrorCode.E02,
@@ -130,8 +130,8 @@ export default class CloudManager implements CloudManagerI {
             this.eventEmmiter.emit(TaskEvent.NewTask, avaiTask);
         }
     }
-    public updateFailureTask(uploadTask: UploadTask): any {
-        const cloudConfig = uploadTask.cloudConfig;
+    public updateFailureTask(task: Task): any {
+        const cloudConfig = task.cloudConfig;
         const cloudProvider = cloudConfig.type;
         const frontTask = this.getFrontTask(cloudProvider);
         if (!frontTask) {
@@ -142,7 +142,7 @@ export default class CloudManager implements CloudManagerI {
             );
         }
         // check the id is correct front task
-        if (uploadTask.id != frontTask.id) {
+        if (task.id != frontTask.id) {
             throw new MasterError(
                 process.pid,
                 MasterErrorCode.E02,
@@ -169,14 +169,15 @@ export default class CloudManager implements CloudManagerI {
             this.eventEmmiter.emit(TaskEvent.NewTask, avaiTask);
         }
     }
-    public getAvaiTask(cloudProvider: CloudProvider): UploadTask | undefined {
+    public getAvaiTask(cloudProvider: CloudProvider): Task | undefined {
         return this.getFrontTask(cloudProvider);
     }
 
     private getFrontTask(cloudProvider: CloudProvider) {
-        let taskQueue = this.uploadTasksMap.get(cloudProvider);
+        let taskQueue = this.TasksMap.get(cloudProvider);
+        console.log(taskQueue);
         if (!taskQueue) {
-            taskQueue = new Queue<UploadTask>();
+            taskQueue = new Queue<Task>();
             return undefined;
         }
         return taskQueue.front();
@@ -196,7 +197,7 @@ export default class CloudManager implements CloudManagerI {
     }
 
     private removeFrontTask(cloudProvider: CloudProvider) {
-        const taskQueue = this.uploadTasksMap.get(cloudProvider);
+        const taskQueue = this.TasksMap.get(cloudProvider);
         if (!taskQueue) {
             throw new MasterError(
                 process.pid,

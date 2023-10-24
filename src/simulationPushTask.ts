@@ -48,9 +48,9 @@ export const autoSendTask = () => {
             size: 1000
         };
         const uploadTaskFake: UploadTask = new UploadTask(
-            undefined,
             fakeCloudConfig,
-            fakeFileData
+            fakeFileData,
+            undefined
         );
         CloudManager.getInstance().addNewTask(uploadTaskFake);
     }, INTERVAL_TIME);

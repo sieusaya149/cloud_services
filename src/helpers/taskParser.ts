@@ -12,9 +12,9 @@ export class UploadTaskParser {
         for (let i = 0; i < lengthCloudConfig; i++) {
             const cloudConfig = unpackData.cloudConfigs[i];
             const newUploadTask = new UploadTask(
-                undefined,
                 cloudConfig,
-                unpackData.fileData
+                unpackData.fileData,
+                undefined
             );
             this.listTask.push(newUploadTask);
         }
