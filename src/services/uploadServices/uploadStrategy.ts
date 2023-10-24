@@ -1,33 +1,42 @@
 import {CloudProvider} from 'packunpackservice';
-import {UploadTask} from '../../helpers/workerFtTask';
-import {UploadEvent, UploadEventEmitter} from '~/events/uploadEvent';
+import {UploadTask, Task} from '../../helpers/workerFtTask';
+import {WorkerEvent, WorkerEventEmitter} from '~/events/wokerEvent';
 
 export class UploadStrategyBase {
-    protected uploadTask: UploadTask;
-    protected uploadEvent: UploadEventEmitter;
+    protected task: Task;
+    protected taskEvent: WorkerEventEmitter;
 
-    constructor(uploadTask: UploadTask) {
-        this.uploadEvent = UploadEventEmitter.getInstance();
-        this.uploadTask = uploadTask;
+    constructor(task: Task) {
+        this.taskEvent = WorkerEventEmitter.getInstance();
+        this.task = task;
     }
     async executeUpload() {}
+    async executeDelete() {}
     async executeUploadMock() {}
 
     public triggerSuccessUpload() {
-        this.uploadEvent.emit(UploadEvent.SUCCESS_UPLOAD, this.uploadTask);
+        this.taskEvent.emit(WorkerEvent.SUCCESS_UPLOAD, this.task);
     }
+
+    public getTask(): Task {
+        return this.task;
+    }
+
     public triggerFailureUpload(message?: string) {
-        this.uploadEvent.emit(
-            UploadEvent.FAILURE_UPLOAD,
-            this.uploadTask,
-            message
-        );
+        this.taskEvent.emit(WorkerEvent.FAILURE_UPLOAD, this.task, message);
     }
     protected triggerProgressUpload(percentCompleted: number) {
-        this.uploadEvent.emit(
-            UploadEvent.PROGRESS_UPLOAD,
+        this.taskEvent.emit(
+            WorkerEvent.PROGRESS_UPLOAD,
             percentCompleted,
-            this.uploadTask
+            this.task
         );
+    }
+    public triggerSuccessDelete() {
+        this.taskEvent.emit(WorkerEvent.SUCCESS_DELETE, this.task);
+    }
+
+    public triggerFailureDelete(message?: string) {
+        this.taskEvent.emit(WorkerEvent.FAILURE_DELETE, this.task, message);
     }
 }

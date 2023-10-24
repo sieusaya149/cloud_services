@@ -14,16 +14,16 @@ function send(message: string) {
 export default class MockService {
     constructor() {}
     uploadingFile(masterMsg: MasterCommand) {
-        const {uploadTask} = masterMsg;
+        const {task} = masterMsg;
         // const err = Math.random() <= 0.5;
         const err = false;
 
         if (!err) {
-            const successMessage = new SuccessMessage(uploadTask);
+            const successMessage = new SuccessMessage(task);
             send(successMessage.toString());
             process.exit(1);
         } else {
-            const failureMessage = new FailureMessage(uploadTask);
+            const failureMessage = new FailureMessage(task);
             send(failureMessage.toString());
             process.exit(0);
         }

@@ -1,4 +1,12 @@
-import AWS from 'aws-sdk';
+import {
+    HeadObjectCommand,
+    S3Client,
+    PutObjectCommand,
+    DeleteObjectCommand
+} from '@aws-sdk/client-s3';
+
+import {Upload} from '@aws-sdk/lib-storage';
+
 import fs from 'fs';
 import stream from 'stream';
 import {
@@ -6,7 +14,7 @@ import {
     ProgressMessage,
     SuccessMessage
 } from '../ipcServices/ipcMessage';
-import {UploadTask} from '~/helpers/workerFtTask';
+import {UploadTask, Task, TaskType, DeleteTask} from '~/helpers/workerFtTask';
 import {UploadStrategyBase} from '~/services/uploadServices/uploadStrategy';
 import {ChildError, ChildErrorCode} from '~/errorHandling/childError';
 import {getExtFromFile} from '~/utils/utils';
@@ -14,32 +22,42 @@ import {getExtFromFile} from '~/utils/utils';
 export default class AwsService extends UploadStrategyBase {
     private s3;
     private bucketName;
-    constructor(uploadTask: UploadTask) {
-        super(uploadTask);
-        const {accessKey, secretKey, bucketName} =
-            uploadTask.cloudConfig.metaData;
-        this.s3 = new AWS.S3({
-            accessKeyId: accessKey,
-            secretAccessKey: secretKey
+    constructor(task: Task) {
+        super(task);
+        const {accessKey, secretKey, bucketName} = task.cloudConfig.metaData;
+        this.s3 = new S3Client({
+            credentials: {
+                accessKeyId: accessKey,
+                secretAccessKey: secretKey
+            },
+            region: 'ap-southeast-1'
         });
         this.bucketName = bucketName;
     }
 
     async executeUpload() {
+        if (this.task.type != TaskType.UPLOAD) {
+            throw new ChildError(
+                process.pid,
+                ChildErrorCode.E01,
+                'This is not a upload task'
+            );
+        }
+        const uploadTask = this.task as UploadTask;
         const fileParams = {
             Bucket: this.bucketName,
-            Key: this.uploadTask.metadata.fileName
+            Key: uploadTask.metadata.fileName
         };
         let canUpload = false;
         try {
             let copyVersion = 1;
             while (!canUpload) {
-                await this.s3.headObject(fileParams).promise();
+                await this.s3.send(new HeadObjectCommand(fileParams));
                 console.warn(
                     `file ${fileParams.Key} is existed on AWS already`
                 );
                 const {rawFilename, extension} = getExtFromFile(
-                    this.uploadTask.metadata.fileName
+                    uploadTask.metadata.fileName
                 );
                 fileParams.Key =
                     rawFilename + `(${copyVersion})` + `.${extension}`;
@@ -61,7 +79,7 @@ export default class AwsService extends UploadStrategyBase {
             }
         }
         const readFileStream = fs.createReadStream(
-            this.uploadTask.metadata.filePath
+            uploadTask.metadata.filePath
         );
         const passThroughStream = new stream.PassThrough();
 
@@ -74,9 +92,30 @@ export default class AwsService extends UploadStrategyBase {
         );
     }
 
+    async executeDelete() {
+        if (this.task.type != TaskType.DELETE) {
+            throw new ChildError(
+                process.pid,
+                ChildErrorCode.E01,
+                'This is not a upload task'
+            );
+        }
+        const deleteTask = this.task as DeleteTask;
+
+        console.log('***************');
+        console.log(deleteTask);
+
+        const deleteCommand = new DeleteObjectCommand({
+            Bucket: deleteTask.fileInfor.Bucket,
+            Key: deleteTask.fileInfor.Key
+        });
+
+        await this.s3.send(deleteCommand);
+    }
+
     async executeUploadMock() {
         console.log('upload task recevied from worker');
-        console.log(this.uploadTask);
+        console.log(this.task);
         const err = false;
         let archo = 0;
         for (let i = 0; i < 1000; i++) {
@@ -103,6 +142,16 @@ export default class AwsService extends UploadStrategyBase {
         allStreamsToCatchError: any[]
     ) => {
         return new Promise<T>((resolve, reject) => {
+            if (this.task.type != TaskType.UPLOAD) {
+                throw new ChildError(
+                    process.pid,
+                    ChildErrorCode.E01,
+                    'This is not a upload task'
+                );
+            }
+
+            const uploadTask = this.task as UploadTask;
+
             allStreamsToCatchError.forEach((currentStream: any) => {
                 currentStream.on('error', (e: Error) => {
                     reject(
@@ -124,31 +173,34 @@ export default class AwsService extends UploadStrategyBase {
             };
 
             // Upload the data directly to S3 using the S3 upload method
-            const upload = this.s3.upload(
-                uploadParams,
-                (err: any, res: any) => {
-                    if (err) {
-                        reject(
-                            new ChildError(
-                                process.pid,
-                                ChildErrorCode.E01,
-                                `${err}`
-                            )
-                        );
-                    } else {
-                        console.log(res);
-                        this.uploadTask.setCloudInforWhenSuccess(res);
-                        this.triggerSuccessUpload();
-                        resolve('Uploading Success' as T);
-                    }
-                }
-            );
-            upload.on('httpUploadProgress', (progress: any) => {
-                // Calculate the percentage completed
-                const percentCompleted =
-                    (progress.loaded / this.uploadTask.metadata.size) * 100;
-                this.triggerProgressUpload(percentCompleted);
-            });
+            new Upload({
+                client: this.s3,
+                params: uploadParams
+            })
+                .done()
+                .then((data) => {
+                    console.log('File uploaded successfully:', data);
+                    uploadTask.setCloudInforWhenSuccess(data);
+                    this.triggerSuccessUpload();
+                    resolve('Uploading Success' as T);
+                })
+                .catch((error) => {
+                    console.error('Error uploading file:', error);
+                    reject(
+                        new ChildError(
+                            process.pid,
+                            ChildErrorCode.E01,
+                            `${error}`
+                        )
+                    );
+                });
+
+            // upload.on('httpUploadProgress', (progress: any) => {
+            //     // Calculate the percentage completed
+            //     const percentCompleted =
+            //         (progress.loaded / uploadTask.metadata.size) * 100;
+            //     this.triggerProgressUpload(percentCompleted);
+            // });
         });
     };
 }
